@@ -2,48 +2,42 @@ import numpy as np
 import warnings
 
 def swapRows(A, i, j):
-    tmp = A[i].copy()
-    A[i] = A[j]
-    A[j] = tmp
+    A[[i, j]] = A[[j, i]]
 
 def relError(a, b):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         try:
-            return np.abs(a-b)/np.max(np.abs(np.array([a, b])))
+            return np.abs(a - b) / np.max(np.abs([a, b]))
         except:
             return 0.0
 
 def rowReduce(A, i, j, pivot):
     factor = A[j][pivot] / A[i][pivot]
-    for k in range(len(A[j])):
-        if np.isclose(A[j][k], factor * A[i][k]):
-            A[j][k] = 0.0
-        else:
-            A[j][k] = A[j][k] - factor * A[i][k]
+    A[j] = A[j] - factor * A[i]
 
 def forwardElimination(B):
     A = B.copy().astype(float)
-    m, n = np.shape(A)
-    for i in range(m-1):
-        leftmostNonZeroRow = m
-        leftmostNonZeroCol = n
+    m, n = A.shape
+    for i in range(m - 1):
+        leftmostRow = m
+        leftmostCol = n
         for h in range(i, m):
             for k in range(i, n):
-                if (A[h][k] != 0.0) and (k < leftmostNonZeroCol):
-                    leftmostNonZeroRow = h
-                    leftmostNonZeroCol = k
+                if A[h][k] != 0.0 and k < leftmostCol:
+                    leftmostRow = h
+                    leftmostCol = k
                     break
-        if leftmostNonZeroRow == m:
+        if leftmostRow == m:
             break
-        if leftmostNonZeroRow > i:
-            swapRows(A, leftmostNonZeroRow, i)
-        for h in range(i+1, m):
-            rowReduce(A, i, h, leftmostNonZeroCol)
+        if leftmostRow > i:
+            swapRows(A, leftmostRow, i)
+        for h in range(i + 1, m):
+            rowReduce(A, i, h, leftmostCol)
     return A
 
 def inconsistentSystem(A):
-    m, n = np.shape(A)
+    m, n = A.shape
     for i in range(m):
         nonZeros = np.nonzero(A[i])[0]
         if len(nonZeros) == 0:
@@ -53,13 +47,13 @@ def inconsistentSystem(A):
     return False
 
 def backsubstitution(A):
-    m, n = np.shape(A)
     A = A.copy().astype(float)
-    for i in range(m-1, -1, -1):
-        nonzeroindex = np.nonzero(A[i])[0]
-        if len(nonzeroindex) == 0:
+    m, n = A.shape
+    for i in range(m - 1, -1, -1):
+        nonzero_idx = np.nonzero(A[i])[0]
+        if len(nonzero_idx) == 0:
             continue
-        pivot = nonzeroindex[0]
+        pivot = nonzero_idx[0]
         if pivot == n - 1:
             continue
         A[i] = A[i] / A[i, pivot]
@@ -67,15 +61,11 @@ def backsubstitution(A):
             A[j] -= A[j, pivot] * A[i]
     return A
 
-# Matriks augmented untuk sistem:
-# 2x – 3y + 2z = 3
-# x  - y  -2z = -1
-# -x + 2y -3z = -4
-
+# Masukkan sistem persamaan:
 A = np.array([
-    [ 2, -3,  2,  3],
-    [ 1, -1, -2, -1],
-    [-1,  2, -3, -4]
+    [2, -3, 2, 3],
+    [1, -1, -2, -1],
+    [-1, 2, -3, -4]
 ])
 
 A_1 = forwardElimination(A)
@@ -87,3 +77,5 @@ print("\nInconsistent?:", inconsistentSystem(A_2))
 
 solution = A_2[:, -1]
 print("\nSolution (x, y, z):", solution)
+print("\nPretty Solution:")
+print(f"x = {solution[0]:.0f}, y = {solution[1]:.0f}, z = {solution[2]:.0f}")
